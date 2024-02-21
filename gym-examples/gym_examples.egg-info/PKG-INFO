@@ -1,0 +1,5 @@
+Metadata-Version: 2.1
+Name: gym_examples
+Version: 0.0.1
+Requires-Dist: gym==0.26.0
+Requires-Dist: pygame==2.1.0
