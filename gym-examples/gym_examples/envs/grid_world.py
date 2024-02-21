@@ -1,3 +1,7 @@
+## This file is a modified version of the file `grid_world.py` from the gym documentation.
+## The tutorial can be found at https://www.gymlibrary.dev/content/environment_creation/.
+## The GridWorldEnv class has been modified to replace the grid game by the Pedantle one.
+
 import gym
 from gym import spaces
 import pygame
