@@ -7,7 +7,22 @@ from gym import spaces
 import pygame
 import numpy as np
 
+def compute_similarity(word1, word2):
+    if word1 == word2:
+        return 1
+    return 0.5
+
 def process_article(article, max_length):
+    '''
+    This function takes an article as input and returns a cleaned list of words.
+
+    params:
+    - article: a string representing the article.
+    - max_length: an integer representing the maximum length of the list of words.
+
+    output:
+    - words: a list of words of maximum length max_length.
+    '''
     import re
     
     input_string = article
@@ -21,15 +36,16 @@ def process_article(article, max_length):
         output_string = input_string
 
     output_string = re.sub(r'\s+', ' ', output_string)
-    words = re.findall(r"[\w']+|[.,!?;-_=+\(\)\[\]]", output_string)
+    words = re.findall(r"[\w']+|[.,!?;-_=+\(\)\[\]/']", output_string)
     return words[:max_length]
 
 def process_title(title):
     import re
     title = re.sub(r'\s+', ' ', title)
-    words = re.findall(r"[\w']+|[.,!?;-_=+\(\)\[\]]", title)
+    words = re.findall(r"[\w']+|[.,!?;-_=+\(\)\[\]/']", title)
+    #debug
     print(words)
-    return title
+    return words + ['test'] #debug
 
 def load_wiki_page():
     import pandas as pd
@@ -102,6 +118,8 @@ class GridWorldEnv(gym.Env):
 
         # Load the Wikipedia page and process it
         self._wiki = load_wiki_page() # it's a dictionary with "id", "url", "title", "text"
+        #debug
+        print(self._wiki["url"])
         self._title = process_title(self._wiki.pop("title"))
         self._article = self._wiki.pop("text")
         self._words = process_article(self._article, self.max_article_size)
@@ -110,7 +128,6 @@ class GridWorldEnv(gym.Env):
         self._title_length = len(self._title)
 
         # Initialize the environment corresponding to the loaded Wikipedia page
-        self._title = np.zeros(self._title_length, dtype=bool)
         self._words_prox = np.zeros(self._article_length, dtype=float)
         self._words_size = np.array([len(word) for word in self._words], dtype=int)
         self._proposed_words = [] # no proposed words at the beginning
@@ -158,75 +175,79 @@ class GridWorldEnv(gym.Env):
         elif action in self._proposed_words:
             already_proposed = True                  
 
-
-        # Map the action (element of {0,1,2,3}) to the direction we walk in
-        direction = self._action_to_direction[action]
-        # We use `np.clip` to make sure we don't leave the grid
-        self._agent_location = np.clip(
-            self._agent_location + direction, 0, self.size - 1
-        )
         # An episode is done iff the agent has reached the target
-        terminated = np.array_equal(self._agent_location, self._target_location)
-        reward = 1 if terminated else 0  # Binary sparse rewards
+        terminated = None not in self._fitted_title
+        reward = 1 if terminated else -1  # Binary sparse rewards
         observation = self._get_obs()
-        info = self._get_info()
 
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation, reward, terminated, False, info
+        return observation, reward, terminated, False, {}
     
     def render(self):
         if self.render_mode == "rgb_array":
             return self._render_frame()
 
-    def _render_frame(self):
+    def _render_frame(
+            self, 
+            title_height=30, 
+            word_height=15,
+            left_margin=10,
+            top_margin=10,
+            font="lato",
+            padding = 5,
+            rounded_radius = 5,
+            space_between_words = 10,
+            ):
+
+        # pygame initialization
         if self.window is None and self.render_mode == "human":
             pygame.init()
             pygame.display.init()
+            self._title_font = pygame.font.Font('freesansbold.ttf',int(title_height*0.9))
+            self._word_font = pygame.font.Font('freesansbold.ttf',int(word_height*0.9))
             self.window = pygame.display.set_mode((self.window_size, self.window_size))
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
+        # Draw the background
+        background_color = (255, 255, 255)
         canvas = pygame.Surface((self.window_size, self.window_size))
-        canvas.fill((255, 255, 255))
-        pix_square_size = (
-            self.window_size / self.size
-        )  # The size of a single grid square in pixels
+        canvas.fill(background_color)
 
-        # First we draw the target
-        pygame.draw.rect(
-            canvas,
-            (255, 0, 0),
-            pygame.Rect(
-                pix_square_size * self._target_location,
-                (pix_square_size, pix_square_size),
-            ),
-        )
-        # Now we draw the agent
-        pygame.draw.circle(
-            canvas,
-            (0, 0, 255),
-            (self._agent_location + 0.5) * pix_square_size,
-            pix_square_size / 3,
-        )
+        # The offset is used to keep track of the position of the next word to be drawn.
+        left_offset = left_margin
+        top_offset = top_margin
 
-        # Finally, add some gridlines
-        for x in range(self.size + 1):
-            pygame.draw.line(
-                canvas,
-                0,
-                (0, pix_square_size * x),
-                (self.window_size, pix_square_size * x),
-                width=3,
-            )
-            pygame.draw.line(
-                canvas,
-                0,
-                (pix_square_size * x, 0),
-                (pix_square_size * x, self.window_size),
-                width=3,
-            )
+        # Draw the title boxes/words
+        for i, word in enumerate(self._fitted_title):
+            # Process the word (it can be None)
+            text_color = (0, 0, 0)
+            text = self._title_font.render(word, True, text_color)
+            text_rect = text.get_rect()
+            text_rect.left = left_offset
+            text_rect.top = top_offset
+            
+            if word is None: # Draw a black square
+                # We compute the width of the square based on the length of the true word
+                text_rect.width = title_height//2 * len(self._title[i])
+                
+                # Draw the square
+                rounded_rect = pygame.Rect(text_rect.left - padding, text_rect.top - padding, text_rect.width + 2 * padding, text_rect.height + 2 * padding)
+                rounded_rect.center = text_rect.center
+                rectangle_color = (0, 0, 0)
+                pygame.draw.rect(canvas, rectangle_color, rounded_rect, border_radius=rounded_radius)
+
+                # Update the offset
+                left_offset += text_rect.width + space_between_words + padding
+
+            else:
+                # Draw the word
+                canvas.blit(text, text_rect)
+
+                # Update the offset
+                left_offset += text_rect.width + space_between_words + padding
 
         if self.render_mode == "human":
             # The following line copies our drawings from `canvas` to the visible window
