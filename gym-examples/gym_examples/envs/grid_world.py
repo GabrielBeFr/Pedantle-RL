@@ -10,7 +10,7 @@ import numpy as np
 def compute_similarity(word1, word2):
     if word1 == word2:
         return 1
-    return 0.5
+    return np.random.rand()
 
 def process_article(article, max_length):
     '''
@@ -248,6 +248,76 @@ class GridWorldEnv(gym.Env):
 
                 # Update the offset
                 left_offset += text_rect.width + space_between_words + padding
+
+            if left_offset > self.window_size - left_margin:
+                left_offset = left_margin
+                top_offset += title_height + padding
+
+        left_offset = left_margin
+        top_offset += title_height + padding
+
+        # Draw the article boxes/words
+        for i, word in enumerate(self._fitted_words):
+            sim = self._words_prox[i] # proximity to the true word
+            
+            if sim <= 0: # Draw a black square
+                # Create a text object only for geometrical purposes
+                text_color = (0, 0, 0)
+                text = self._word_font.render(word, True, text_color)
+                text_rect = text.get_rect() 
+                text_rect.left = left_offset
+                text_rect.top = top_offset
+                # We compute the width of the square based on the length of the true word
+                text_rect.width = word_height//2 * len(self._words[i])
+                
+                # Draw the square
+                rounded_rect = pygame.Rect(text_rect.left - padding, text_rect.top - padding, text_rect.width + 2 * padding, text_rect.height + 2 * padding)
+                rounded_rect.center = text_rect.center
+                rectangle_color = (0, 0, 0)
+                pygame.draw.rect(canvas, rectangle_color, rounded_rect, border_radius=rounded_radius)
+
+                # Update the offset
+                left_offset += text_rect.width + space_between_words + padding
+
+            elif sim < self.sim_threshold: # Draw a black square with a grey square behind
+                # Create the text object for the fitted word
+                gray = (1-sim) * 255
+                text_color = (gray, gray, gray)
+                text = self._word_font.render(word, True, text_color)
+                text_rect = text.get_rect() 
+                text_rect.left = left_offset
+                text_rect.top = top_offset
+                
+                # Draw the square
+                rounded_rect = pygame.Rect(text_rect.left - padding, text_rect.top - padding, text_rect.width + 2 * padding, text_rect.height + 2 * padding)
+                rounded_rect.center = text_rect.center
+                rectangle_color = (0, 0, 0)
+                pygame.draw.rect(canvas, rectangle_color, rounded_rect, border_radius=rounded_radius)
+
+                # Draw the fitted word
+                canvas.blit(text, text_rect)
+
+                # Update the offset
+                left_offset += text_rect.width + space_between_words + padding
+
+            else:
+                # Create the text object for the true word
+                text_color = (0, 0, 0)
+                text = self._word_font.render(word, True, text_color)
+                text_rect = text.get_rect() 
+                text_rect.left = left_offset
+                text_rect.top = top_offset
+
+                # Draw the true word
+                canvas.blit(text, text_rect)
+
+                # Update the offset
+                left_offset += text_rect.width + space_between_words + padding
+
+            if left_offset > self.window_size - left_margin:
+                left_offset = left_margin
+                top_offset += word_height + padding
+
 
         if self.render_mode == "human":
             # The following line copies our drawings from `canvas` to the visible window
