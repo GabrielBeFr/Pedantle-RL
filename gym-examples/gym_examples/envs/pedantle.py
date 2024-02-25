@@ -6,63 +6,18 @@ import gym
 from gym import spaces
 import pygame
 import numpy as np
+import re
+from gym_examples.wrappers.utils import process_article, process_title, load_wiki_page
+from gym_examples.wrappers.sim_computer import compute_similarity
 
-def compute_similarity(word1, word2):
-    if word1 == word2:
-        return 1
-    return np.random.rand()
-
-def process_article(article, max_length):
-    '''
-    This function takes an article as input and returns a cleaned list of words.
-
-    params:
-    - article: a string representing the article.
-    - max_length: an integer representing the maximum length of the list of words.
-
-    output:
-    - words: a list of words of maximum length max_length.
-    '''
-    import re
-    
-    input_string = article
-    pattern = r'([\s\S]*?)\n\n\w+[\s]*\n\n'
-    match = re.search(pattern, input_string)
-
-    if match:
-        text_before_word = match.group(1)
-        output_string = text_before_word
-    else:
-        output_string = input_string
-
-    output_string = re.sub(r'\s+', ' ', output_string)
-    words = re.findall(r"[\w']+|[.,!?;-_=+\(\)\[\]/']", output_string)
-    return words[:max_length]
-
-def process_title(title):
-    import re
-    title = re.sub(r'\s+', ' ', title)
-    words = re.findall(r"[\w']+|[.,!?;-_=+\(\)\[\]/']", title)
-    #debug
-    print(words)
-    return words + ['test'] #debug
-
-def load_wiki_page():
-    import pandas as pd
-
-    wiki = pd.read_csv("/home/gabriel/cours/RL/projet/wikipedia_simple.csv")
-    article = wiki.sample()
-    return article.to_dict(orient="records")[0]
-
-
-class GridWorldEnv(gym.Env):
+class PedantleEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
     def __init__(self, render_mode=None, sim_threshold=0.95, max_article_size=1000, max_title_size=100, max_word_length=1000):
 
         self.max_article_size = max_article_size
         self.sim_threshold = sim_threshold
-        self.window_size = 512  # The size of the PyGame window
+        self.window_size = (1600,900)  # The size of the PyGame window
 
         # Observations are dictionaries with the title and the words states.
         # - title is a binary vector (0 if not discovered, 1 if discovered).
@@ -118,8 +73,6 @@ class GridWorldEnv(gym.Env):
 
         # Load the Wikipedia page and process it
         self._wiki = load_wiki_page() # it's a dictionary with "id", "url", "title", "text"
-        #debug
-        print(self._wiki["url"])
         self._title = process_title(self._wiki.pop("title"))
         self._article = self._wiki.pop("text")
         self._words = process_article(self._article, self.max_article_size)
@@ -134,12 +87,21 @@ class GridWorldEnv(gym.Env):
         self._fitted_words = [None] * self._article_length # only gray squares at the beginning
         self._fitted_title = [None] * self._title_length # only gray squares at the beginning
 
+        for i, word in enumerate(self._title):
+            if not re.match(r'^[a-zA-Z0-9]+$', word):
+                self._fitted_title[i] = word
+        
+        for i, word in enumerate(self._words):
+            if not re.match(r'^[a-zA-Z0-9]+$', word):
+                self._fitted_words[i] = word
+                self._words_prox[i] = 1
+
         observation = self._get_obs()
 
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation
+        return observation, {}
     
     def step(self, action):
 
@@ -191,14 +153,15 @@ class GridWorldEnv(gym.Env):
 
     def _render_frame(
             self, 
-            title_height=30, 
-            word_height=15,
-            left_margin=10,
-            top_margin=10,
+            title_height=40, 
+            word_height=20,
+            left_margin=20,
+            top_margin=20,
             font="lato",
             padding = 5,
             rounded_radius = 5,
-            space_between_words = 10,
+            space_between_words = 5,
+            space_between_lines = 3,
             ):
 
         # pygame initialization
@@ -207,16 +170,43 @@ class GridWorldEnv(gym.Env):
             pygame.display.init()
             self._title_font = pygame.font.Font('freesansbold.ttf',int(title_height*0.9))
             self._word_font = pygame.font.Font('freesansbold.ttf',int(word_height*0.9))
-            self.window = pygame.display.set_mode((self.window_size, self.window_size))
+            self.window = pygame.display.set_mode(self.window_size)
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
         # Draw the background
         background_color = (255, 255, 255)
-        canvas = pygame.Surface((self.window_size, self.window_size))
+        canvas = pygame.Surface(self.window_size)
         canvas.fill(background_color)
 
         # The offset is used to keep track of the position of the next word to be drawn.
+        left_offset = left_margin
+        top_offset = top_margin
+
+        # Draw the url of the article
+        text_color = (0, 0, 200)
+        text = self._word_font.render(self._wiki["url"], True, text_color)
+        text_rect = text.get_rect()
+        text_rect.left = left_offset
+        text_rect.top = top_offset
+        canvas.blit(text, text_rect)
+        top_margin += 2*text_rect.height + 2*space_between_lines
+        top_offset = top_margin
+
+        # Draw the last searched words
+        max_word_length = 0
+        for i, word in enumerate(reversed(self._proposed_words)):
+            text_color = (max(255-20*i,0), 0, 0)
+            text = self._word_font.render(word, True, text_color)
+            text_rect = text.get_rect()
+            text_rect.left = left_offset
+            text_rect.top = top_offset
+            canvas.blit(text, text_rect)
+            top_offset += text_rect.height + 2*space_between_lines
+            if text_rect.width > max_word_length:
+                max_word_length = text_rect.width
+
+        left_margin = 2*left_margin + max_word_length
         left_offset = left_margin
         top_offset = top_margin
 
@@ -230,6 +220,9 @@ class GridWorldEnv(gym.Env):
             text_rect.top = top_offset
             
             if word is None: # Draw a black square
+                # Add padding to the square
+                left_offset += 2*padding
+
                 # We compute the width of the square based on the length of the true word
                 text_rect.width = title_height//2 * len(self._title[i])
                 
@@ -240,27 +233,30 @@ class GridWorldEnv(gym.Env):
                 pygame.draw.rect(canvas, rectangle_color, rounded_rect, border_radius=rounded_radius)
 
                 # Update the offset
-                left_offset += text_rect.width + space_between_words + padding
+                left_offset += rounded_rect.width + space_between_words*title_height//word_height
 
             else:
                 # Draw the word
                 canvas.blit(text, text_rect)
 
                 # Update the offset
-                left_offset += text_rect.width + space_between_words + padding
+                left_offset += text_rect.width + space_between_words*title_height//word_height
 
-            if left_offset > self.window_size - left_margin:
+            if left_offset > self.window_size[0] - left_margin:
                 left_offset = left_margin
-                top_offset += title_height + padding
+                top_offset += text_rect.height + 2 * padding + space_between_lines
 
         left_offset = left_margin
-        top_offset += title_height + padding
+        top_offset += text_rect.height + 2*padding + 2*space_between_lines
 
         # Draw the article boxes/words
         for i, word in enumerate(self._fitted_words):
             sim = self._words_prox[i] # proximity to the true word
             
             if sim <= 0: # Draw a black square
+                # Add padding to the square
+                left_offset += 2*padding
+
                 # Create a text object only for geometrical purposes
                 text_color = (0, 0, 0)
                 text = self._word_font.render(word, True, text_color)
@@ -277,9 +273,12 @@ class GridWorldEnv(gym.Env):
                 pygame.draw.rect(canvas, rectangle_color, rounded_rect, border_radius=rounded_radius)
 
                 # Update the offset
-                left_offset += text_rect.width + space_between_words + padding
+                left_offset += rounded_rect.width + space_between_words
 
             elif sim < self.sim_threshold: # Draw a black square with a grey square behind
+                # Add padding to the square
+                left_offset += 2*padding
+
                 # Create the text object for the fitted word
                 gray = (1-sim) * 255
                 text_color = (gray, gray, gray)
@@ -298,7 +297,9 @@ class GridWorldEnv(gym.Env):
                 canvas.blit(text, text_rect)
 
                 # Update the offset
-                left_offset += text_rect.width + space_between_words + padding
+                print("rounded_rect.width",rounded_rect.width)
+                print("text_rect.width",text_rect.width)
+                left_offset += rounded_rect.width + space_between_words
 
             else:
                 # Create the text object for the true word
@@ -310,13 +311,13 @@ class GridWorldEnv(gym.Env):
 
                 # Draw the true word
                 canvas.blit(text, text_rect)
-
+                
                 # Update the offset
-                left_offset += text_rect.width + space_between_words + padding
+                left_offset += text_rect.width + space_between_words
 
-            if left_offset > self.window_size - left_margin:
+            if left_offset > self.window_size[0] - left_margin:
                 left_offset = left_margin
-                top_offset += word_height + padding
+                top_offset += text_rect.height + 2 * padding + space_between_lines
 
 
         if self.render_mode == "human":
