@@ -7,6 +7,7 @@ gym_examples.egg-info/dependency_links.txt
 gym_examples.egg-info/requires.txt
 gym_examples.egg-info/top_level.txt
 gym_examples/envs/__init__.py
-gym_examples/envs/grid_world.py
+gym_examples/envs/pedantle.py
 gym_examples/wrappers/__init__.py
-gym_examples/wrappers/relative_position.py
+gym_examples/wrappers/sim_computer.py
+gym_examples/wrappers/utils.py
