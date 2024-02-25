@@ -1,5 +1,5 @@
 # This file contains utility functions that are used in the environment.
-
+import pandas as pd
 import re
 
 def process_article(article, max_length):
@@ -29,14 +29,11 @@ def process_article(article, max_length):
     return words[:max_length]
 
 def process_title(title):
-    import re
     title = re.sub(r'\s+', ' ', title)
     words = re.findall(r"[\w']+|[.,!?;-_=+\(\)\[\]/']", title)
     return words
 
-def load_wiki_page():
-    import pandas as pd
-
-    wiki = pd.read_csv("/home/gabriel/cours/RL/projet/wikipedia_simple.csv")
+def load_wiki_page(wiki_file):
+    wiki = pd.read_csv(wiki_file)
     article = wiki.sample()
     return article.to_dict(orient="records")[0]
