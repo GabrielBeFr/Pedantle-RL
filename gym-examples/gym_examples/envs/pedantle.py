@@ -8,13 +8,24 @@ import pygame
 import numpy as np
 import re
 from gym_examples.wrappers.utils import process_article, process_title, load_wiki_page
-from gym_examples.wrappers.sim_computer import compute_similarity
+from gym_examples.wrappers.sim_computer import load_embedding_model, compute_similarity
 
 class PedantleEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None, sim_threshold=0.95, max_article_size=1000, max_title_size=100, max_word_length=1000):
+    def __init__(
+            self, 
+            test_model=False,
+            wiki_file="/home/gabriel/cours/RL/projet/wikipedia_simple.csv",
+            render_mode=None, 
+            sim_threshold=0.55, 
+            max_article_size=1000, 
+            max_title_size=100, 
+            max_word_length=1000,
+            ):
 
+        self.wiki_file = wiki_file
+        self.embedding_model = load_embedding_model(test_model)
         self.max_article_size = max_article_size
         self.sim_threshold = sim_threshold
         self.window_size = (1600,900)  # The size of the PyGame window
@@ -72,7 +83,7 @@ class PedantleEnv(gym.Env):
         super().reset(seed=seed)
 
         # Load the Wikipedia page and process it
-        self._wiki = load_wiki_page() # it's a dictionary with "id", "url", "title", "text"
+        self._wiki = load_wiki_page(self.wiki_file) # it's a dictionary with "id", "url", "title", "text"
         self._title = process_title(self._wiki.pop("title"))
         self._article = self._wiki.pop("text")
         self._words = process_article(self._article, self.max_article_size)
@@ -112,7 +123,7 @@ class PedantleEnv(gym.Env):
 
             # Check similarity with title
             for i, word in enumerate(self._title):
-                similarity = compute_similarity(word, action)
+                similarity = compute_similarity(word, action, self.embedding_model)
 
                 # if the similarity is better than the threshold, we fit the true word.
                 if similarity>self.sim_threshold:
@@ -120,7 +131,7 @@ class PedantleEnv(gym.Env):
 
             # Check similarity with article
             for i, word in enumerate(self._words):
-                similarity = compute_similarity(word, action)
+                similarity = compute_similarity(word, action, self.embedding_model)
 
                 # if the similarity is better than the threshold, we fit the true word
                 # and update the proximity to 1.
@@ -280,7 +291,7 @@ class PedantleEnv(gym.Env):
                 left_offset += 2*padding
 
                 # Create the text object for the fitted word
-                gray = (1-sim) * 255
+                gray = (sim - self.sim_threshold) * 255 + 255
                 text_color = (gray, gray, gray)
                 text = self._word_font.render(word, True, text_color)
                 text_rect = text.get_rect() 
@@ -297,8 +308,6 @@ class PedantleEnv(gym.Env):
                 canvas.blit(text, text_rect)
 
                 # Update the offset
-                print("rounded_rect.width",rounded_rect.width)
-                print("text_rect.width",text_rect.width)
                 left_offset += rounded_rect.width + space_between_words
 
             else:
