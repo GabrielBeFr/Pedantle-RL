@@ -1,6 +1,7 @@
 import gym_examples
 import gym
 import time
+from agent import policy
 
 if __name__ == "__main__":
     env = gym.make(
