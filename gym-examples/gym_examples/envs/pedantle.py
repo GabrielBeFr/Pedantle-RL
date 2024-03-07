@@ -18,12 +18,14 @@ class PedantleEnv(gym.Env):
             test_model=False,
             wiki_file="/home/gabriel/cours/RL/projet/wikipedia_simple.csv",
             render_mode=None, 
+            logging=None,
             sim_threshold=0.55, 
             max_article_size=1000, 
             max_title_size=100, 
             max_word_length=1000,
             ):
 
+        self.logging = logging
         self.wiki_file = wiki_file
         self.embedding_model = load_embedding_model(test_model)
         self.max_article_size = max_article_size
@@ -67,8 +69,13 @@ class PedantleEnv(gym.Env):
         self.window = None
         self.clock = None
 
+        self.logging.info('Environment created with the following parameters:')
+        self.logging.info(f'wiki_file: {self.wiki_file}')
+        self.logging.info(f'test_model: {test_model}')
+        self.logging.info(f'render_mode: {render_mode} \n')
+
     def _get_obs(self):
-        return {
+        obs = {
             "words_prox": self._words_prox,
             "words_size": self._words_size,
             "proposed_words": self._proposed_words,
@@ -76,6 +83,8 @@ class PedantleEnv(gym.Env):
             "fitted_title": self._fitted_title,
             "title": self._title,
             }
+        #self.logging.info(f'The current observation is: {obs} \n')
+        return obs
     
     def get_model(self):
         return self.embedding_model
@@ -109,6 +118,8 @@ class PedantleEnv(gym.Env):
                 self._fitted_words[i] = word
                 self._words_prox[i] = 1
 
+        self.logging.info(f'Reset of the environment with the following wikipedia article: {self._wiki} \n')
+
         observation = self._get_obs()
 
         if self.render_mode == "human":
@@ -116,16 +127,16 @@ class PedantleEnv(gym.Env):
 
         return observation, {}
     
-    def step(self, action):
+    def step(self, proposed_word):
 
         already_proposed = False
 
-        if action not in self._proposed_words:
-            self._proposed_words.append(action)
+        if proposed_word not in self._proposed_words:
+            self._proposed_words.append(proposed_word)
 
             # Check similarity with title
             for i, word in enumerate(self._title):
-                similarity = compute_similarity(word, action, self.embedding_model)
+                similarity = compute_similarity(word, proposed_word, self.embedding_model)
 
                 # if the similarity is better than the threshold, we fit the true word.
                 if similarity>self.sim_threshold:
@@ -133,7 +144,7 @@ class PedantleEnv(gym.Env):
 
             # Check similarity with article
             for i, word in enumerate(self._words):
-                similarity = compute_similarity(word, action, self.embedding_model)
+                similarity = compute_similarity(word, proposed_word, self.embedding_model)
 
                 # if the similarity is better than the threshold, we fit the true word
                 # and update the proximity to 1.
@@ -144,10 +155,10 @@ class PedantleEnv(gym.Env):
                 # if the similarity is better than the previous one, we fit the proposed word
                 # and updata the proximity to the new similarity score.
                 elif similarity>self._words_prox[i]: 
-                    self._fitted_words[i] = action
+                    self._fitted_words[i] = proposed_word
                     self._words_prox[i] = similarity
 
-        elif action in self._proposed_words:
+        elif proposed_word in self._proposed_words:
             already_proposed = True                  
 
         # An episode is done iff the agent has reached the target
@@ -157,6 +168,8 @@ class PedantleEnv(gym.Env):
 
         if self.render_mode == "human":
             self._render_frame()
+
+        self.logging.info(f'A step was performed with the word: {proposed_word} \n')
 
         return observation, reward, terminated, False, {}
     
