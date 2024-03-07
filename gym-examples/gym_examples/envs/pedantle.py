@@ -169,8 +169,6 @@ class PedantleEnv(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        self.logging.info(f'A step was performed with the word: {proposed_word} \n')
-
         return observation, reward, terminated, False, {}
     
     def render(self):

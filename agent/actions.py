@@ -2,22 +2,20 @@ import numpy as np
 from collections import defaultdict
 from gym_examples.wrappers.utils import filter_words
 
-def random_word(observation, model, logging):
+def random_word(observation, model, target_memory, logging):
     '''
-    Return a random word from the model's vocabulary.
+    Return a random word from the model's vocabulary and None as a target as the coice is random.
     There is no strategy here.
     '''
     n = len(model.index_to_key)
     i = np.random.randint(0, n-1)
     word = model.index_to_key[i]
 
-    logging.info(f"Random word chosen from the vocabulary: {word}")
+    return word.split('_'), None
 
-    return word.split('_')
-
-def closest_word_of_random_word(observation, model, logging):
+def closest_word_of_random_word(observation, model, target_memory, logging):
     '''
-    Return the closest word of a random word taken among the fitted words.
+    Return the closest word of a random word taken among the fitted words and the chosen word as the target.
     The idea is to explore rather than exploit.
     '''
     ######TO-DO######
@@ -29,10 +27,8 @@ def closest_word_of_random_word(observation, model, logging):
     # with a proximity of 1. 
     # - Take into account the words that have been tried unsuccessfully to
     # add them into the model.most_similar function as the 'negative' parameter.
-    #################
-    fitted_words = set(observation["fitted_words"])
-    
-    words, frequencies = filter_words(fitted_words, model)
+    #################   
+    words, frequencies = filter_words(observation, model)
 
     random_word = np.random.choice(
         a=words,
@@ -47,13 +43,11 @@ def closest_word_of_random_word(observation, model, logging):
     # the second closest word.
     #################
 
-    logging.info(f"Random word chosen from the fitted words in the article: {random_word} and the most similar word found is: {word}")
+    return word.split('_'), random_word
 
-    return word.split('_')
-
-def closest_word_of_last_targetted_word(observation, model, logging):
+def closest_word_of_last_targetted_word(observation, model, target_memory, logging):
     '''
-    Return the closest word of the word that was proposed last.
+    Return the closest word of the word that was proposed last and the last targetted word as the target.
     The idea is to exploit rather than explore.
     '''
     ######TO-DO######
@@ -64,41 +58,41 @@ def closest_word_of_last_targetted_word(observation, model, logging):
     # this way.
     #################
     proposed_words = observation["proposed_words"]
-    word = model.most_similar(proposed_words[-1], topn=1)[0][0]
+    if target_memory[-1] is None:
+        word = np.random.choice(model.index_to_key)
+    else:
+        word = model.most_similar(target_memory[-1], topn=1)[0][0]
     ######TO-DO######
     # Sometimes, because of the uppercases, the word found is the
     # same as the random word. In this case, we may want to take
     # the second closest word.
     #################
 
-    logging.info(f"Last proposed word: {proposed_words[-1]} and the most similar word found is: {word}")
+    return word.split('_'), target_memory[-1]
 
-    return word.split('_')
-
-def closest_of_closest_words(observation, model, logging):
+def closest_of_closest_words(observation, model, target_memory, logging):
     '''
     Return the word with the highest similarity score
-    among the closest words of each word fitted in the article.
-    '''
-    fitted_words = set(observation["fitted_words"])
-    
-    fitted_words, _ = filter_words(fitted_words, model)
+    among the closest words of each word fitted in the article
+    and the corresponding word among the fitted ones as the target.
+    '''    
+    fitted_words, _ = filter_words(observation, model)
 
-    closest_words = defaultdict(int)
+    closest_words_score = defaultdict(int)
+    closest_words_words = defaultdict(str)
     for word in fitted_words:
         closest_word, score = model.most_similar(word, topn=1)[0]
-        closest_words[closest_word] += score
+        closest_words_words[closest_word] = word
+        closest_words_score[closest_word] += score
 
-    closest_word = max(closest_words, key=lambda x: closest_words[x])
+    closest_word = max(closest_words_score, key=lambda x: closest_words_score[x])
     ######TO-DO######
     # Sometimes, because of the uppercases, the word found is the
     # same as the random word. In this case, we may want to take
     # the second closest word.
     #################
 
-    logging.info(f"The closest of the closest words is {closest_word} with a score of {closest_words[closest_word]}.")
-
-    return closest_word.split('_')
+    return closest_word.split('_'), closest_words_words[closest_word]
 
 ACTIONS = {
     "random": random_word,

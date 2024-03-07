@@ -40,7 +40,9 @@ def load_wiki_page(wiki_file):
     article = wiki.sample()
     return article.to_dict(orient="records")[0]
 
-def filter_words(sequence_of_words, model):
+def filter_words(observation, model):
+    fitted_words = np.array(observation["fitted_words"])[np.where(observation["words_prox"] != 1)[0]]
+    sequence_of_words = set(fitted_words)
     filtered_words = defaultdict(int)
     try_again = True
     while try_again:
