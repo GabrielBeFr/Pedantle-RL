@@ -147,6 +147,7 @@ Project Link: [https://github.com/GabrielBeFr/Pedantle-RL](https://github.com/Ga
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
+* [GabrielBeFr](https://github.com/GabrielBeFr)
 * [Chiararov](https://github.com/chiararov)
 * [QuentinJGMace](https://github.com/QuentinJGMace)
 
