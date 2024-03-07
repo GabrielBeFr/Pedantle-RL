@@ -1,6 +1,8 @@
 # This file contains utility functions that are used in the environment.
 import pandas as pd
 import re
+from collections import defaultdict
+import numpy as np
 
 def process_article(article, max_length):
     '''
@@ -37,3 +39,20 @@ def load_wiki_page(wiki_file):
     wiki = pd.read_csv(wiki_file)
     article = wiki.sample()
     return article.to_dict(orient="records")[0]
+
+def filter_words(sequence_of_words, model):
+    filtered_words = defaultdict(int)
+    try_again = True
+    while try_again:
+        for word in sequence_of_words:
+            if word is not None and re.match(r'^[a-zA-Z0-9]+$', word):
+                try:
+                    model.key_to_index[word]
+                except:
+                    continue # The chosen word is not in the model's vocabulary
+                filtered_words[word] += 1
+                try_again = False
+
+    frequencies = np.array(list(filtered_words.values()))
+    words = np.array(list(filtered_words.keys()))
+    return words, frequencies

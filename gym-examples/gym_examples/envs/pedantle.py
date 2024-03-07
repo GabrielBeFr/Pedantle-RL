@@ -67,16 +67,18 @@ class PedantleEnv(gym.Env):
         self.window = None
         self.clock = None
 
-
     def _get_obs(self):
         return {
-            "title": self._title,
             "words_prox": self._words_prox,
             "words_size": self._words_size,
             "proposed_words": self._proposed_words,
             "fitted_words": self._fitted_words,
             "fitted_title": self._fitted_title,
+            "title": self._title,
             }
+    
+    def get_model(self):
+        return self.embedding_model
     
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
@@ -88,15 +90,15 @@ class PedantleEnv(gym.Env):
         self._article = self._wiki.pop("text")
         self._words = process_article(self._article, self.max_article_size)
         
-        self._article_length = len(self._words)
-        self._title_length = len(self._title)
+        article_length = len(self._words)
+        title_length = len(self._title)
 
         # Initialize the environment corresponding to the loaded Wikipedia page
-        self._words_prox = np.zeros(self._article_length, dtype=float)
+        self._words_prox = np.zeros(article_length, dtype=float)
         self._words_size = np.array([len(word) for word in self._words], dtype=int)
         self._proposed_words = [] # no proposed words at the beginning
-        self._fitted_words = [None] * self._article_length # only gray squares at the beginning
-        self._fitted_title = [None] * self._title_length # only gray squares at the beginning
+        self._fitted_words = [None] * article_length # only gray squares at the beginning
+        self._fitted_title = [None] * title_length # only gray squares at the beginning
 
         for i, word in enumerate(self._title):
             if not re.match(r'^[a-zA-Z0-9]+$', word):
