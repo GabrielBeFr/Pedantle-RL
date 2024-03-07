@@ -2,8 +2,9 @@ import gym_examples
 import gym
 import time
 import logging
-from agent.policy import policy
+from agent.policy import Agent
 import datetime
+from tqdm import tqdm
 
 if __name__ == "__main__":
 
@@ -13,7 +14,7 @@ if __name__ == "__main__":
 
     env = gym.make(
         "gym_examples/Pedantle-v0", 
-        render_mode="human", 
+        render_mode=None, # else "human" 
         test_model=True, 
         wiki_file="/home/gabriel/cours/RL/projet/wikipedia_april.csv",
         logging = logging,
@@ -21,11 +22,10 @@ if __name__ == "__main__":
     
     model = env.get_model()
     observation, _ = env.reset()
+    agent = Agent(model)
 
-    for i in range(20):
-        action = policy(observation, logging)
-        words = action(observation, model, logging)
-        time.sleep(0.5)
+    for i in tqdm(range(20)):
+        words = agent.policy(observation, logging)
 
         reward = 0
         for word in words:
