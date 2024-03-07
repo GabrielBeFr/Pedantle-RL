@@ -8,5 +8,5 @@ def policy(observation, logging):
         random_action = "random"
     else:
         random_action = np.random.choice(list(ACTIONS.keys()))
-    logging.info(f"For the state: {state} \n the random policy chose the action: {random_action}.")
+    logging.info(f"For the state: {state} the random policy chose the action: {random_action}.")
     return ACTIONS[random_action]
