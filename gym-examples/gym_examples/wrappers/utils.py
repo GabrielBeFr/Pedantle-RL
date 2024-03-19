@@ -44,16 +44,13 @@ def filter_words(observation, model):
     fitted_words = np.array(observation["fitted_words"])[np.where(observation["words_prox"] != 1)[0]]
     sequence_of_words = set(fitted_words)
     filtered_words = defaultdict(int)
-    try_again = True
-    while try_again:
-        for word in sequence_of_words:
-            if word is not None and re.match(r'^[a-zA-Z0-9]+$', word):
-                try:
-                    model.key_to_index[word]
-                except:
-                    continue # The chosen word is not in the model's vocabulary
-                filtered_words[word] += 1
-                try_again = False
+    for word in sequence_of_words:
+        if word is not None and re.match(r'^[a-zA-Z0-9]+$', word):
+            try:
+                model.key_to_index[word]
+            except:
+                continue # The chosen word is not in the model's vocabulary
+            filtered_words[word] += 1
 
     frequencies = np.array(list(filtered_words.values()))
     words = np.array(list(filtered_words.keys()))

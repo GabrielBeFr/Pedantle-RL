@@ -22,11 +22,10 @@ if __name__ == "__main__":
     
     model = env.get_model()
     observation, _ = env.reset()
-    agent = Agent(model)
-
-    for i in tqdm(range(20)):
+    agent = Agent(model, observation)
+    logging.info(f"First observation is:{observation} \n")
+    for i in tqdm(range(3000)):
         words = agent.policy(observation, logging)
-
         reward = 0
         for word in words:
             observation, _reward, terminated, _, _ = env.step(word)
@@ -34,5 +33,6 @@ if __name__ == "__main__":
 
             if terminated:
                 observation, info = env.reset()
+                agent = Agent(model, observation)
 
     env.close()

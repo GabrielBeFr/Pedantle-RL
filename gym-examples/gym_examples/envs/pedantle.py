@@ -19,7 +19,8 @@ class PedantleEnv(gym.Env):
             wiki_file="/home/gabriel/cours/RL/projet/wikipedia_simple.csv",
             render_mode=None, 
             logging=None,
-            sim_threshold=0.55, 
+            sim_threshold_true=0.55,
+            sim_threshold_fit=0.2, 
             max_article_size=1000, 
             max_title_size=100, 
             max_word_length=1000,
@@ -29,7 +30,8 @@ class PedantleEnv(gym.Env):
         self.wiki_file = wiki_file
         self.embedding_model = load_embedding_model(test_model)
         self.max_article_size = max_article_size
-        self.sim_threshold = sim_threshold
+        self.sim_threshold_true = sim_threshold_true
+        self.sim_threshold_fit = sim_threshold_fit
         self.window_size = (1600,900)  # The size of the PyGame window
 
         # Observations are dictionaries with the title and the words states.
@@ -139,7 +141,7 @@ class PedantleEnv(gym.Env):
                 similarity = compute_similarity(word, proposed_word, self.embedding_model)
 
                 # if the similarity is better than the threshold, we fit the true word.
-                if similarity>self.sim_threshold:
+                if similarity>self.sim_threshold_true:
                     self._fitted_title[i] = word
 
             # Check similarity with article
@@ -148,13 +150,14 @@ class PedantleEnv(gym.Env):
 
                 # if the similarity is better than the threshold, we fit the true word
                 # and update the proximity to 1.
-                if similarity>self.sim_threshold: 
+                if similarity>max(self.sim_threshold_true,self.sim_threshold_fit): 
                     self._fitted_words[i] = word
                     self._words_prox[i] = 1
 
-                # if the similarity is better than the previous one, we fit the proposed word
-                # and updata the proximity to the new similarity score.
-                elif similarity>self._words_prox[i]: 
+                # if the similarity is better than the previous one and higher than
+                # the fixed threshold of 0.2, we fit the proposed word
+                # and update the proximity to the new similarity score.
+                elif similarity>self._words_prox[i] and similarity>0.2: 
                     self._fitted_words[i] = proposed_word
                     self._words_prox[i] = similarity
 
@@ -299,12 +302,12 @@ class PedantleEnv(gym.Env):
                 # Update the offset
                 left_offset += rounded_rect.width + space_between_words
 
-            elif sim < self.sim_threshold: # Draw a black square with a grey square behind
+            elif sim < self.sim_threshold_true: # Draw a black square with a grey square behind
                 # Add padding to the square
                 left_offset += 2*padding
 
                 # Create the text object for the fitted word
-                gray = (sim - self.sim_threshold) * 255 + 255
+                gray = (sim - self.sim_threshold_true) * 255 + 255
                 text_color = (gray, gray, gray)
                 text = self._word_font.render(word, True, text_color)
                 text_rect = text.get_rect() 
