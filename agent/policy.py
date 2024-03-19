@@ -5,10 +5,12 @@ from pdb import set_trace
 import re
 
 class Agent():
-    def __init__(self, model, observation) -> None:
+    def __init__(self, model, observation, memory_size = 15) -> None:
         self.last_target_id = None
         self.pos_neg_words = {}
         self.model = model
+        self.voc = model.key_to_index.keys()
+        self.memory_size = memory_size
 
         for i in range(len(observation["fitted_words"])):
             self.pos_neg_words[i] = {"negative": [], "positive": []}
@@ -16,11 +18,14 @@ class Agent():
     def _update_pos_neg(self, observation):
         if len(observation["proposed_words"]) != 0:
             last_proposed_word = observation["proposed_words"][-1]
-            for i,word in enumerate(observation["fitted_words"]):
-                if word == last_proposed_word:
-                    self.pos_neg_words[i]["positive"].append(last_proposed_word)
-                else:
-                    self.pos_neg_words[i]["negative"].append(last_proposed_word)
+            if last_proposed_word in self.voc:
+                for i,word in enumerate(observation["fitted_words"]):
+                    if word == last_proposed_word:
+                        self.pos_neg_words[i]["positive"].append(last_proposed_word)
+                        self.pos_neg_words[i]["positive"] = self.pos_neg_words[i]["positive"][-self.memory_size:]
+                    else:
+                        self.pos_neg_words[i]["negative"].append(last_proposed_word)
+                        self.pos_neg_words[i]["negative"] = self.pos_neg_words[i]["negative"][-self.memory_size:]
 
 
     def policy(self, observation, logging):
@@ -36,15 +41,11 @@ class Agent():
         logging.info(f"State: {state}")
         logging.info(f"Action: {random_action}")
 
-        try:
-            words, target = ACTIONS[random_action](
-            observation, 
-            self,
-            logging,
-            )
-        except Exception as e:
-            print(e)
-            set_trace()
+        words, target = ACTIONS[random_action](
+        observation, 
+        self,
+        logging,
+        )
         if target is not None:
             self.last_target_id = target
             logging.info(f"Target id: {target}")

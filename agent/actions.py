@@ -4,7 +4,7 @@ from gym_examples.wrappers.utils import filter_words
 import re
 from pdb import set_trace 
 
-def random_word(observation, agent, logging):
+def _random_word(observation, agent, logging):
     '''
     Return a random word from the model's vocabulary and None as a target as the coice is random.
     There is no strategy here.
@@ -42,22 +42,28 @@ def closest_word_of_random_word(observation, agent, logging):
     
     target_id = observation["fitted_words"].index(random_word)
     
-    try:
-        word = model.most_similar(
-            positive=agent.pos_neg_words[target_id]["positive"],
-            negative=agent.pos_neg_words[target_id]["negative"],
-            topn=1,
-            )[0][0]
-    except:
-        logging.info("Action turned into Random.")
-        return random_word(observation, agent, logging)
+    words = model.most_similar(
+        positive=agent.pos_neg_words[target_id]["positive"],
+        negative=agent.pos_neg_words[target_id]["negative"],
+        topn=10,
+        )
+    words = [t[0] for t in words]
+    
+    for word in words:
+        word = re.split(r'[^a-zA-Z0-9]', word)
+        if word[0] not in observation["proposed_words"]:
+            break
+        # we have to add a second contion for words like "He'd" or "He's"
+        elif len(word)>1 and word[1] not in observation["proposed_words"]: 
+            break
+
     ######TO-DO######
     # Sometimes, because of the uppercases, the word found is the
     # same as the random word. In this case, we may want to take
     # the second closest word.
     #################
 
-    return re.split(r'[^a-zA-Z0-9]', word), target_id # split the word to remove special characters (I'm -> ['I','m'])
+    return word, target_id # split the word to remove special characters (I'm -> ['I','m'])
 
 def closest_word_of_last_targetted_word(observation, agent, logging):
     '''
@@ -75,24 +81,30 @@ def closest_word_of_last_targetted_word(observation, agent, logging):
     model = agent.model
     last_target_id = agent.last_target_id
     if last_target_id is None or observation["fitted_words"][last_target_id] is None:
-        return random_word(observation, agent, logging)
+        return _random_word(observation, agent, logging)
     logging.info(f"Target memory: {last_target_id}")
-    try:
-        word = model.most_similar(
-            positive=agent.pos_neg_words[last_target_id]["positive"],
-            negative=agent.pos_neg_words[last_target_id]["negative"],
-            topn=1,
-            )[0][0]
-    except:
-        logging.info("Action turned into Random.")
-        return random_word(observation, agent, logging)
+
+    words = model.most_similar(
+        positive=agent.pos_neg_words[last_target_id]["positive"],
+        negative=agent.pos_neg_words[last_target_id]["negative"],
+        topn=10,
+        )
+    words = [t[0] for t in words]
+    
+    for word in words:
+        word = re.split(r'[^a-zA-Z0-9]', word)
+        if word[0] not in observation["proposed_words"]:
+            break
+        # we have to add a second contion for words like "He'd" or "He's"
+        elif len(word)>1 and word[1] not in observation["proposed_words"]: 
+            break
     ######TO-DO######
     # Sometimes, because of the uppercases, the word found is the
     # same as the random word. In this case, we may want to take
     # the second closest word.
     #################
 
-    return re.split(r'[^a-zA-Z0-9]', word), last_target_id # split the word to remove special characters (I'm -> ['I','m'])
+    return word, last_target_id # split the word to remove special characters (I'm -> ['I','m'])
 
 def closest_of_closest_words(observation, agent, logging):
     '''
@@ -103,29 +115,36 @@ def closest_of_closest_words(observation, agent, logging):
     model = agent.model
     closest_of_words_index = defaultdict(int)
     closest_words_score = defaultdict(int)
-    try:
-        for i, word in enumerate(observation["fitted_words"]):
-            if word is not None and re.match(r'^[a-zA-Z0-9]+$', word):
-                closest_word, score = model.most_similar(
-                    positive=agent.pos_neg_words[i]["positive"], 
-                    negative=agent.pos_neg_words[i]["negative"],
-                    topn=1,
-                    )[0]
-                closest_words_score[closest_word] = score
-                closest_of_words_index[closest_word] = i
-            elif i == len(observation["fitted_words"])-1:
-                return random_word(observation, agent, logging)
+    for i, word in enumerate(observation["fitted_words"]):
+        if word is not None and re.match(r'^[a-zA-Z0-9]+$', word):
+            closest_word, score = model.most_similar(
+                positive=agent.pos_neg_words[i]["positive"], 
+                negative=agent.pos_neg_words[i]["negative"],
+                topn=1,
+                )[0]
+            closest_words_score[closest_word] = score
+            closest_of_words_index[closest_word] = i
+        elif i == len(observation["fitted_words"])-1:
+            return _random_word(observation, agent, logging)
+        
+    while True:
+        closest_word = max(closest_words_score, key=lambda x: closest_words_score[x])
+        target_id = closest_of_words_index[closest_word]
+        word = re.split(r'[^a-zA-Z0-9]', closest_word)
+        if word[0] not in observation["proposed_words"]:
+            break
+        elif len(word)>1 and word[1] not in observation["proposed_words"]:
+            break
+        else:
+            closest_words_score.pop(closest_word)
+            closest_of_words_index.pop(closest_word)
+            if len(closest_words_score) == 0:
+                return _random_word(observation, agent, logging)
 
-        word = max(closest_words_score, key=lambda x: closest_words_score[x])
-        target_id = closest_of_closest_words[word]
-    except:
-        logging.info("Action turned into Random.")
-        return random_word(observation, agent, logging), None
-
-    return re.split(r'[^a-zA-Z0-9]', word), target_id # split the word to remove special characters (I'm -> ['I','m'])
+    return word, target_id # split the word to remove special characters (I'm -> ['I','m'])
 
 ACTIONS = {
-    "random": random_word,
+    "random": _random_word,
     "closest_word_of_random_word": closest_word_of_random_word,
     "closest_word_of_last_targetted_word": closest_word_of_last_targetted_word,
     "closest_of_closest_words": closest_of_closest_words,
