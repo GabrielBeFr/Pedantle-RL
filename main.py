@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     env = gym.make(
         "gym_examples/Pedantle-v0", 
-        render_mode=None, # else "human" 
+        render_mode="human", # else "human" 
         test_model=True, 
         wiki_file="/home/gabriel/cours/RL/projet/wikipedia_april.csv",
         logging = logging,
@@ -32,6 +32,7 @@ if __name__ == "__main__":
             reward += _reward
 
             if terminated:
+                logging.info(f"Terminated! \n")
                 observation, info = env.reset()
                 agent = Agent(model, observation)
 
