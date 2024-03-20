@@ -3,6 +3,8 @@ from collections import defaultdict
 from gym_examples.wrappers.utils import filter_words
 import re
 from pdb import set_trace 
+from agent.utils import get_nearest_words
+from sklearn.metrics.pairwise import cosine_similarity
 
 def _random_word(observation, agent, logging):
     '''
@@ -31,23 +33,16 @@ def closest_word_of_random_word(observation, agent, logging):
     # - Take into account the words that have been tried unsuccessfully to
     # add them into the model.most_similar function as the 'negative' parameter.
     #################   
-    model = agent.model
-    words, frequencies = filter_words(observation, model)
 
-    random_word = np.random.choice(
-        a=words,
+    target_id = np.random.choice(
+        a=observation["index_of_words_to_find"],
         size=1,
-        p=frequencies/np.sum(frequencies),
         )[0]
+
+    if observation["fitted_words"][target_id] is None:
+        return _random_word(observation, agent, logging)
     
-    target_id = observation["fitted_words"].index(random_word)
-    
-    words = model.most_similar(
-        positive=agent.pos_neg_words[target_id]["positive"],
-        negative=agent.pos_neg_words[target_id]["negative"],
-        topn=10,
-        )
-    words = [t[0] for t in words]
+    words, _ = get_nearest_words(agent, observation, target_id)
     
     for word in words:
         word = re.split(r'[^a-zA-Z0-9]', word)
@@ -78,19 +73,16 @@ def closest_word_of_last_targetted_word(observation, agent, logging):
     # at closest word found yet. We may want to implement the strategy
     # this way.
     #################
-    model = agent.model
     last_target_id = agent.last_target_id
+
+    # Let's first look at if the last target id corresponds to a fitting word. If not, we return a random word.
     if last_target_id is None or observation["fitted_words"][last_target_id] is None:
         return _random_word(observation, agent, logging)
+    
     logging.info(f"Target memory: {last_target_id}")
 
-    words = model.most_similar(
-        positive=agent.pos_neg_words[last_target_id]["positive"],
-        negative=agent.pos_neg_words[last_target_id]["negative"],
-        topn=10,
-        )
-    words = [t[0] for t in words]
-    
+    words, _ = get_nearest_words(agent, observation, last_target_id)   
+
     for word in words:
         word = re.split(r'[^a-zA-Z0-9]', word)
         if word[0] not in observation["proposed_words"]:
@@ -113,23 +105,25 @@ def closest_of_closest_words(observation, agent, logging):
     and the corresponding word among the fitted ones as the target.
     '''    
     model = agent.model
-    closest_of_words_index = defaultdict(int)
+
+    closest_words_index = defaultdict(int)
     closest_words_score = defaultdict(int)
-    for i, word in enumerate(observation["fitted_words"]):
-        if word is not None and re.match(r'^[a-zA-Z0-9]+$', word):
-            closest_word, score = model.most_similar(
-                positive=agent.pos_neg_words[i]["positive"], 
-                negative=agent.pos_neg_words[i]["negative"],
-                topn=1,
-                )[0]
-            closest_words_score[closest_word] = score
-            closest_of_words_index[closest_word] = i
-        elif i == len(observation["fitted_words"])-1:
-            return _random_word(observation, agent, logging)
+    turn_to_random = True
+    for i in observation["index_of_words_to_find"]:
+        word = observation["fitted_words"][i]
+        if word is not None:
+            turn_to_random = False
+            word, score = get_nearest_words(agent, observation, i, n=1)
+            word, score = word[0], score[0]
+            closest_words_score[word] = score
+            closest_words_index[word] = i
+
+    if turn_to_random:
+        return _random_word(observation, agent, logging)
         
     while True:
         closest_word = max(closest_words_score, key=lambda x: closest_words_score[x])
-        target_id = closest_of_words_index[closest_word]
+        target_id = closest_words_index[closest_word]
         word = re.split(r'[^a-zA-Z0-9]', closest_word)
         if word[0] not in observation["proposed_words"]:
             break
@@ -137,7 +131,7 @@ def closest_of_closest_words(observation, agent, logging):
             break
         else:
             closest_words_score.pop(closest_word)
-            closest_of_words_index.pop(closest_word)
+            closest_words_index.pop(closest_word)
             if len(closest_words_score) == 0:
                 return _random_word(observation, agent, logging)
 

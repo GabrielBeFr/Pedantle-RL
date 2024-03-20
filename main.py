@@ -14,15 +14,15 @@ if __name__ == "__main__":
 
     env = gym.make(
         "gym_examples/Pedantle-v0", 
-        render_mode="human", # else "human" 
+        render_mode=None, # else "human" 
         test_model=True, 
-        wiki_file="/home/gabriel/cours/RL/projet/wikipedia_april.csv",
+        wiki_file="data/wikipedia_april.csv",
         logging = logging,
         )
     
-    model = env.get_model()
+    model, index = env.get_model()
     observation, _ = env.reset()
-    agent = Agent(model, observation)
+    agent = Agent(model, index, observation)
     logging.info(f"First observation is:{observation} \n")
     for i in tqdm(range(3000)):
         words = agent.policy(observation, logging)
@@ -34,6 +34,6 @@ if __name__ == "__main__":
             if terminated:
                 logging.info(f"Terminated! \n")
                 observation, info = env.reset()
-                agent = Agent(model, observation)
+                agent = Agent(model, index, observation)
 
     env.close()
