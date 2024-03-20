@@ -28,7 +28,8 @@ class PedantleEnv(gym.Env):
 
         self.logging = logging
         self.wiki_file = wiki_file
-        self.embedding_model = load_embedding_model(test_model)
+        self.logging.info('Loading word2vec and faiss index...')
+        self.embedding_model, self.faiss_index = load_embedding_model(test_model)
         self.max_article_size = max_article_size
         self.sim_threshold_true = sim_threshold_true
         self.sim_threshold_fit = sim_threshold_fit
@@ -46,6 +47,7 @@ class PedantleEnv(gym.Env):
         #   best fit the title.
         self.observation_space = spaces.Dict(
             {
+                "index_of_words_to_find": spaces.MultiDiscrete(np.ones(max_article_size), dtype=int),
                 "title": spaces.MultiBinary(max_title_size),
                 "words_prox": spaces.MultiDiscrete(np.ones(max_article_size), dtype=float),
                 "words_size": spaces.MultiDiscrete([max_word_length for i in range(max_article_size)], dtype=int),
@@ -77,7 +79,9 @@ class PedantleEnv(gym.Env):
         self.logging.info(f'render_mode: {render_mode} \n')
 
     def _get_obs(self):
+        index_of_words_to_find = [i for i, score in enumerate(self._words_prox) if score != 1]
         obs = {
+            "index_of_words_to_find": index_of_words_to_find,
             "words_prox": self._words_prox,
             "words_size": self._words_size,
             "proposed_words": self._proposed_words,
@@ -89,7 +93,7 @@ class PedantleEnv(gym.Env):
         return obs
     
     def get_model(self):
-        return self.embedding_model
+        return self.embedding_model, self.faiss_index
     
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random

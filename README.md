@@ -12,7 +12,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/GabrielBeFr/Pedantle-RL">
-    <img src="pedantle-RL.svg" alt="Logo" width="80" height="80">
+    <img src="report/pedantle-RL.svg" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">Agentle - Playing Pedantle with RL</h3>
@@ -157,13 +157,13 @@ Project Link: [https://github.com/GabrielBeFr/Pedantle-RL](https://github.com/Ga
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/GabrielBeFr/Pedantle-RL.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/GabrielBeFr/report/Pedantle-RL.svg?style=for-the-badge
 [contributors-url]: https://github.com/GabrielBeFr/Pedantle-RL/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/GabrielBeFr/Pedantle-RL.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/GabrielBeFr/report/Pedantle-RL.svg?style=for-the-badge
 [forks-url]: https://github.com/GabrielBeFr/Pedantle-RL/network/members
-[stars-shield]: https://img.shields.io/github/stars/GabrielBeFr/Pedantle-RL.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/GabrielBeFr/report/Pedantle-RL.svg?style=for-the-badge
 [stars-url]: https://github.com/GabrielBeFr/Pedantle-RL/stargazers
-[issues-shield]: https://img.shields.io/github/issues/GabrielBeFr/Pedantle-RL.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/GabrielBeFr/report/Pedantle-RL.svg?style=for-the-badge
 [issues-url]: https://github.com/GabrielBeFr/Pedantle-RL/issues
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://www.linkedin.com/in/gabriel-ben-zenou-69800a1b9/

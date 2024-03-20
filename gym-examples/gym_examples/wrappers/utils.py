@@ -40,17 +40,14 @@ def load_wiki_page(wiki_file):
     article = wiki.sample()
     return article.to_dict(orient="records")[0]
 
-def filter_words(observation, model):
+def filter_words(observation, voc):
     fitted_words = np.array(observation["fitted_words"])[np.where(observation["words_prox"] != 1)[0]]
     sequence_of_words = set(fitted_words)
     filtered_words = defaultdict(int)
     for word in sequence_of_words:
         if word is not None and re.match(r'^[a-zA-Z0-9]+$', word):
-            try:
-                model.key_to_index[word]
-            except:
-                continue # The chosen word is not in the model's vocabulary
-            filtered_words[word] += 1
+            if word in voc:
+                filtered_words[word] += 1
 
     frequencies = np.array(list(filtered_words.values()))
     words = np.array(list(filtered_words.keys()))

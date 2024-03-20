@@ -1,0 +1,9 @@
+numpy
+torch
+gym
+gensim
+matplotlib
+faiss-cpu
+scikit-learn
+datasets
+pandas

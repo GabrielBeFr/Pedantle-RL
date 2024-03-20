@@ -5,15 +5,18 @@ from pdb import set_trace
 import re
 
 class Agent():
-    def __init__(self, model, observation, memory_size = 15) -> None:
+    def __init__(self, model, index, observation, memory_size = 15) -> None:
         self.last_target_id = None
         self.pos_neg_words = {}
         self.model = model
+        self.index = index
         self.voc = model.key_to_index.keys()
         self.memory_size = memory_size
 
         for i in range(len(observation["fitted_words"])):
             self.pos_neg_words[i] = {"negative": [], "positive": []}
+
+        self.punctuation = np.count_nonzero(observation["words_prox"]==1)
 
     def _update_pos_neg(self, observation):
         if len(observation["proposed_words"]) != 0:
@@ -29,7 +32,7 @@ class Agent():
 
 
     def policy(self, observation, logging):
-        state = compute_state(observation)
+        state = compute_state(observation, self.punctuation)
         self._update_pos_neg(observation)
 
         if not any(re.match(r'[a-zA-Z0-9]', item) for item in observation["fitted_words"] if item is not None):

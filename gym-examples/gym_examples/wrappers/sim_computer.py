@@ -3,8 +3,11 @@
 import numpy as np
 from gensim.models import KeyedVectors
 from sklearn.metrics.pairwise import cosine_similarity
+import faiss
 
-EMBEDDING_FILE = 'GoogleNews-vectors-negative300.bin'
+EMBEDDING_FILE = 'data/GoogleNews-vectors-negative300.bin'
+FAISS_FILE_TEST = 'data/word2vec_test.faiss'
+FAISS_FILE_FULL = 'data/word2vec_full.faiss'
 
 def load_embedding_model(test_model):
     '''
@@ -21,10 +24,10 @@ def load_embedding_model(test_model):
     '''
     if test_model:
         print("Loading small embedding model for testing")
-        return KeyedVectors.load_word2vec_format(EMBEDDING_FILE, binary=True, limit=10000)
+        return KeyedVectors.load_word2vec_format(EMBEDDING_FILE, binary=True, limit=10000), faiss.read_index(FAISS_FILE_TEST)
     else:
-        print("Loading full embedding model for testing")
-        return KeyedVectors.load_word2vec_format(EMBEDDING_FILE, binary=True)
+        print("Loading full embedding model")
+        return KeyedVectors.load_word2vec_format(EMBEDDING_FILE, binary=True), faiss.read_index(FAISS_FILE_FULL)
 
 def compute_similarity(word1, word2, model):
     '''

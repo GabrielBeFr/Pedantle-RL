@@ -1,4 +1,3 @@
-README.md
 setup.py
 gym_examples/__init__.py
 gym_examples.egg-info/PKG-INFO
