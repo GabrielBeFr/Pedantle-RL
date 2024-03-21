@@ -41,7 +41,7 @@ def first_word(observation, agent, logging):
             break
     if i==len(words)-1:
         logging.info("Turned to random")
-        return _random_word(observation, agent, logging)
+        return list_classic_word(observation, agent, logging)
     else:
         return word, target_id 
 
