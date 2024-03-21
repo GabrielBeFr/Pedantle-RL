@@ -27,7 +27,7 @@ def first_word(observation, agent, logging):
             break
         if len(observation["index_of_words_to_find"]) == i-1:
             logging.info("Turned to random")
-            return _random_word(observation, agent, logging)
+            return list_classic_word(observation, agent, logging)
         i += 1
 
     words, _ = get_nearest_words(agent, observation, target_id)
@@ -83,7 +83,7 @@ def closest_word_of_random_word(observation, agent, logging):
 
     if observation["fitted_words"][target_id] is None:
         logging.info("Turned to random")
-        return _random_word(observation, agent, logging)
+        return list_classic_word(observation, agent, logging)
     
     words, _ = get_nearest_words(agent, observation, target_id)
     
@@ -96,7 +96,7 @@ def closest_word_of_random_word(observation, agent, logging):
             break
     if i==len(words)-1:
         logging.info("Turned to random")
-        return _random_word(observation, agent, logging)
+        return list_classic_word(observation, agent, logging)
 
     return word, target_id # split the word to remove special characters (I'm -> ['I','m'])
 
@@ -111,7 +111,7 @@ def closest_word_of_last_targetted_word(observation, agent, logging):
     # Let's first look at if the last target id corresponds to a fitting word. If not, we return a random word.
     if last_target_id is None or observation["fitted_words"][last_target_id] is None:
         logging.info("Turned to random")
-        return _random_word(observation, agent, logging)
+        return list_classic_word(observation, agent, logging)
 
     words, _ = get_nearest_words(agent, observation, last_target_id)   
 
@@ -124,7 +124,7 @@ def closest_word_of_last_targetted_word(observation, agent, logging):
             break
     if i==len(words)-1:
         logging.info("Turned to random")
-        return _random_word(observation, agent, logging)
+        return list_classic_word(observation, agent, logging)
 
     return word, last_target_id # split the word to remove special characters (I'm -> ['I','m'])
 
@@ -149,7 +149,7 @@ def closest_of_closest_words(observation, agent, logging):
 
     if turn_to_random:
         logging.info("Turned to random")
-        return _random_word(observation, agent, logging)
+        return list_classic_word(observation, agent, logging)
 
     while True:
         closest_word = max(closest_words_score, key=lambda x: closest_words_score[x])
@@ -163,7 +163,7 @@ def closest_of_closest_words(observation, agent, logging):
         closest_words_index.pop(closest_word)
         if len(closest_words_score) == 0:
             logging.info("Turned to random")
-            return _random_word(observation, agent, logging)
+            return list_classic_word(observation, agent, logging)
 
     return word, target_id # split the word to remove special characters (I'm -> ['I','m'])
 
