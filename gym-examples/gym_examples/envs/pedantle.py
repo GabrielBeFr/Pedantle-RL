@@ -28,8 +28,7 @@ class PedantleEnv(gym.Env):
 
         self.logging = logging
         self.wiki_file = wiki_file
-        self.logging.info('Loading word2vec and faiss index...')
-        self.embedding_model, self.faiss_index = load_embedding_model(test_model)
+        self.embedding_model, self.faiss_index = load_embedding_model(test_model, logging)
         self.max_article_size = max_article_size
         self.sim_threshold_true = sim_threshold_true
         self.sim_threshold_fit = sim_threshold_fit

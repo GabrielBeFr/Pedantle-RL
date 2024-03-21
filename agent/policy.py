@@ -36,7 +36,7 @@ class Agent():
         self._update_pos_neg(observation)
 
         if not any(re.match(r'[a-zA-Z0-9]', item) for item in observation["fitted_words"] if item is not None):
-            random_action = "random"
+            random_action = "list_classic_word"
         else:
             random_action = np.random.choice(list(ACTIONS.keys()))
 
