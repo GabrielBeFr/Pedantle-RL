@@ -31,16 +31,18 @@ class Agent():
                         self.pos_neg_words[i]["negative"] = self.pos_neg_words[i]["negative"][-self.memory_size:]
 
 
-    def policy(self, observation, logging):
+    def policy(self, observation, logging,current_agent,_reward):
         state = compute_state(observation, self.punctuation)
         self._update_pos_neg(observation)
-
-        if not any(re.match(r'[a-zA-Z0-9]', item) for item in observation["fitted_words"] if item is not None):
+        L=list(ACTIONS.keys())
+        if not any(re.match(r'[a-zA-Z0-9]', item) for item in observation["fitted_words"] if item is not None): #pas de mots grisés
             random_action = "list_classic_word"
         else:
-            random_action = np.random.choice(list(ACTIONS.keys()))
+            # random_action = np.random.choice(list(ACTIONS.keys()))
+            random_action = current_agent.agent_step(_reward,state)
+            random_action = L[random_action]
 
-        logging.info(f"Random Policy")
+        # logging.info(f"Random Policy")
         logging.info(f"State: {state}")
         logging.info(f"Action: {random_action}")
 
