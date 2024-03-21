@@ -1,6 +1,21 @@
 
 
-def get_nearest_words(agent, observation, target_id, n=10):
+def get_nearest_words(agent, observation, target_id, n=100):
+    '''
+    Return the n closest words to the target word in the model's vocabulary.
+    Default is n = 10.
+
+    params:
+    - agent: an instance of the Agent class.
+    - observation: a dictionary containing the current observation.
+    - target_id: an integer representing the index of the target word in the article.
+    - n: an integer representing the number of closest words to return.
+
+    output:
+    - words: a list of strings representing the n closest words to the target word.
+    - scores: a list of floats representing the faiss scores for similarity
+        between the target word and the n closest words.
+    '''
     model = agent.model
     index = agent.index
     target_word = observation["fitted_words"][target_id] 

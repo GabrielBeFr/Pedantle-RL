@@ -9,7 +9,7 @@ EMBEDDING_FILE = 'data/GoogleNews-vectors-negative300.bin'
 FAISS_FILE_TEST = 'data/word2vec_test.faiss'
 FAISS_FILE_FULL = 'data/word2vec_full.faiss'
 
-def load_embedding_model(test_model):
+def load_embedding_model(test_model, logging=None):
     '''
     Load the word2vec model from the file.
 
@@ -23,11 +23,14 @@ def load_embedding_model(test_model):
         between proposed and true words.
     '''
     if test_model:
-        print("Loading small embedding model for testing")
+        if logging is not None: logging.info("Loading small embedding model and small faiss index for testing")
         return KeyedVectors.load_word2vec_format(EMBEDDING_FILE, binary=True, limit=10000), faiss.read_index(FAISS_FILE_TEST)
     else:
-        print("Loading full embedding model")
-        return KeyedVectors.load_word2vec_format(EMBEDDING_FILE, binary=True), faiss.read_index(FAISS_FILE_FULL)
+        if logging is not None: logging.info("Loading full embedding model")
+        model = KeyedVectors.load_word2vec_format(EMBEDDING_FILE, binary=True)
+        if logging is not None: logging.info("Loading full faiss index")
+        index = faiss.read_index(FAISS_FILE_FULL)
+        return model, index
 
 def compute_similarity(word1, word2, model):
     '''
