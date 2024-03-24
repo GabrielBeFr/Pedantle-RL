@@ -4,13 +4,11 @@ from pdb import set_trace
 import re
 
 class ProposeWords():
-    def __init__(self, model, index, observation, memory_size = 15) -> None:
+    def __init__(self, model, index, observation) -> None:
         self.last_target_id = None
-        self.pos_neg_words = {}
         self.model = model
         self.index = index
         self.voc = model.key_to_index.keys()
-        self.memory_size = memory_size
 
         self.punctuation = np.count_nonzero(observation["words_prox"]==1)
 

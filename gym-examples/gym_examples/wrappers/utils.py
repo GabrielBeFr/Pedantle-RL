@@ -26,7 +26,7 @@ def process_article(article, max_length):
     else:
         output_string = input_string
 
-    output_string = re.sub(r'\s+', ' ', output_string)
+    output_string = re.sub(r'\s+', ' ', output_string).lower()
     words = re.findall(r"[\w]+|[.,!?;-_=+\(\)\[\]/']+", output_string)
     return words[:max_length]
 

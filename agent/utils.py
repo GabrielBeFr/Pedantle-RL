@@ -1,6 +1,6 @@
 
 
-def get_nearest_words(agent, observation, target_id, n=100):
+def get_nearest_words(agent, observation, target_id, n=100, direct_word = None):
     '''
     Return the n closest words to the target word in the model's vocabulary.
     Default is n = 10.
@@ -18,7 +18,10 @@ def get_nearest_words(agent, observation, target_id, n=100):
     '''
     model = agent.model
     index = agent.index
-    target_word = observation["fitted_words"][target_id] 
+    if target_id is not None:
+        target_word = observation["fitted_words"][target_id] 
+    elif direct_word is not None:
+        target_word = direct_word
     id = model.key_to_index[target_word]
     embedding = model.vectors[id]
     scores, words_index = index.search(embedding.reshape(1,-1), n+1) 
