@@ -47,11 +47,11 @@ class PedantleEnv(gym.Env):
         self.observation_space = spaces.Dict(
             {
                 "index_of_words_to_find": spaces.MultiDiscrete(np.ones(max_article_size), dtype=int),
-                "title": spaces.MultiBinary(max_title_size),
                 "words_prox": spaces.MultiDiscrete(np.ones(max_article_size), dtype=float),
                 "words_size": spaces.MultiDiscrete([max_word_length for i in range(max_article_size)], dtype=int),
                 "proposed_words": spaces.Sequence(spaces.Text(max_word_length)),
                 "fitted_words": spaces.Sequence(spaces.Text(max_word_length)),
+                "words_title": spaces.Sequence(spaces.Text(max_word_length)),
                 "fitted_title": spaces.Sequence(spaces.Text(max_word_length)),
             }
         )
@@ -79,6 +79,7 @@ class PedantleEnv(gym.Env):
 
     def _get_obs(self):
         index_of_words_to_find = [i for i, score in enumerate(self._words_prox) if score != 1]
+        alphanumeric_words_title = [word.lower() for word in self._fitted_title if word is not None and re.match(r'^[a-zA-Z0-9]+$', word)]
         obs = {
             "index_of_words_to_find": index_of_words_to_find,
             "words_prox": self._words_prox,
@@ -86,11 +87,11 @@ class PedantleEnv(gym.Env):
             "proposed_words": self._proposed_words,
             "fitted_words": self._fitted_words,
             "fitted_title": self._fitted_title,
-            "title": self._title,
+            "words_title": alphanumeric_words_title,
             }
         #self.logging.info(f'The current observation is: {obs} \n')
         return obs
-    
+        
     def get_model(self):
         return self.embedding_model, self.faiss_index
     
@@ -132,9 +133,18 @@ class PedantleEnv(gym.Env):
 
         return observation, {}
     
-    def step(self, proposed_word):
+    def step(
+            self, 
+            proposed_word, 
+            whole_title_reward = 100000, 
+            title_true_reward = 10, 
+            word_true_reward = 1,
+            word_fit_reward = 1,
+            nothing_reward = -1,
+            ):
 
         already_proposed = False
+        reward = 0
 
         if proposed_word not in self._proposed_words:
             self._proposed_words.append(proposed_word)
@@ -145,6 +155,7 @@ class PedantleEnv(gym.Env):
 
                 # if the similarity is better than the threshold, we fit the true word.
                 if similarity>self.sim_threshold_true:
+                    reward += title_true_reward
                     self._fitted_title[i] = word
 
             # Check similarity with article
@@ -153,14 +164,16 @@ class PedantleEnv(gym.Env):
 
                 # if the similarity is better than the threshold, we fit the true word
                 # and update the proximity to 1.
-                if similarity>max(self.sim_threshold_true,self.sim_threshold_fit): 
+                if similarity>self.sim_threshold_true: 
+                    reward += word_true_reward
                     self._fitted_words[i] = word
                     self._words_prox[i] = 1
 
                 # if the similarity is better than the previous one and higher than
                 # the fixed threshold of 0.2, we fit the proposed word
                 # and update the proximity to the new similarity score.
-                elif similarity>self._words_prox[i] and similarity>0.2: 
+                elif similarity>self._words_prox[i] and similarity>self.sim_threshold_fit: 
+                    reward += word_fit_reward*similarity
                     self._fitted_words[i] = proposed_word
                     self._words_prox[i] = similarity
 
@@ -169,7 +182,10 @@ class PedantleEnv(gym.Env):
 
         # An episode is done iff the agent has reached the target
         terminated = None not in self._fitted_title
-        reward = 1 if terminated else -1  # Binary sparse rewards
+        if terminated:
+            reward = whole_title_reward
+        else:
+            reward += nothing_reward  # Binary sparse rewards
         observation = self._get_obs()
 
         if self.render_mode == "human":

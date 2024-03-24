@@ -21,7 +21,7 @@ if __name__ == "__main__":
     env = gym.make(
         "gym_examples/Pedantle-v0", 
         render_mode=None, # else "human" 
-        test_model=True, 
+        test_model=False, 
         wiki_file="data/wikipedia_april.csv",
         logging = logging,
         )

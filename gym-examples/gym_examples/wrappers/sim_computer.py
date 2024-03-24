@@ -7,7 +7,7 @@ import faiss
 
 EMBEDDING_FILE = 'data/GoogleNews-vectors-negative300.bin'
 FAISS_FILE_TEST = 'data/word2vec_test.faiss'
-FAISS_FILE_FULL = 'data/word2vec_full.faiss'
+FAISS_FILE_FULL = 'data/v3_cpu_word2vec_full.faiss'
 
 def load_embedding_model(test_model, logging=None):
     '''
