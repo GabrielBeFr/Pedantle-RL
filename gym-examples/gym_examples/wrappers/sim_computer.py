@@ -44,12 +44,18 @@ def compute_similarity(word1, word2, model):
     - similarity: a float representing the cosine similarity between the two words.
     '''
 
-    if word1 == word2:
+    if word1 == word2  or word1.lower() == word2.lower() or word1 == word2.lower() or word1.lower() == word2.lower():
         similarity = 1.0
     else:
         try:
             vec1, vec2 = model[word1], model[word2]
             similarity = cosine_similarity([vec1], [vec2]).item()
+            vec1, vec2 = model[word1], model[word2.lower()]
+            similarity = max(similarity,cosine_similarity([vec1], [vec2]).item())
+            vec1, vec2 = model[word1.lower()], model[word2]
+            similarity = max(similarity,cosine_similarity([vec1], [vec2]).item())
+            vec1, vec2 = model[word1.lower()], model[word2.lower()]
+            similarity = max(similarity,cosine_similarity([vec1], [vec2]).item())
         except:
             similarity = 0.0
 

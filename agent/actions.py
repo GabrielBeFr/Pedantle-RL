@@ -21,18 +21,22 @@ def first_word(observation, agent, logging):
     Return the closest word of the first word fitted in the article.
     '''
     model = agent.model
-    i = 0
+    target_id = 0
     while True:
-        target_id = observation["index_of_words_to_find"][i]
         word = observation["fitted_words"][target_id]
-        if word is not None:
-            break
-        if len(observation["index_of_words_to_find"])-1 == i:
-            logging.info("Turned to usual word")
-            return list_classic_word(observation, agent, logging)
-        i += 1
+        if word is not None and re.match(r'^[a-zA-Z0-9]+$', word):
+            if random.random() < 0.8:
+                break
+        if len(observation["fitted_words"])-1 == target_id:
+            logging.info("Turned to full random")
+            return _random_word(observation, agent, logging)
+        target_id += 1
 
-    words, _ = get_nearest_words(agent, observation, target_id)
+    try:
+        words, _ = get_nearest_words(agent, observation, target_id, n=200)
+    except:
+        logging.info("Target word not in voc, turned to full random")
+        return _random_word(observation, agent, logging)
 
     for i, word in enumerate(words):
         word = re.split(r'[^a-zA-Z0-9]', word) # split the word to remove special characters (I'm -> ['I','m'])
@@ -50,12 +54,30 @@ def list_classic_word(observation, agent, logging):
     '''
     Return the closest word of the first word fitted in the article.
     '''
-    unproposed_classics = WORD_LIST_USUAL - set(observation["proposed_words"])
+    try:
+        unproposed_classics = WORD_LIST_USUAL - set(observation["proposed_words"])
+    except:
+        logging.info(f'type(observation["proposed_words"]): {type(observation["proposed_words"])}')
+
     if len(unproposed_classics)==0:
-        logging.info("Turned to random")
-        return _random_word(observation, agent, logging)
+        unproposed_random = WORD_LIST_RANDOM - set(observation["proposed_words"])
+
+        if len(unproposed_random)==0:
+            unproposed_words = WORDS_BIG_LIST - set(observation["proposed_words"])
+
+            if len(unproposed_words)==0:
+                logging.info("No more word in the LISTS, turned to full random.")
+                return _random_word(observation, agent, logging)
+            
+            else:
+                word = np.random.choice(list(unproposed_words), size=1)
+                return [word.lower()], None
+
+        for word in unproposed_random:
+            return [word.lower()], None
+
     for word in unproposed_classics:
-        return [word], None 
+        return [word.lower()], None 
 
 def _random_word(observation, agent, logging):
     '''
@@ -64,25 +86,11 @@ def _random_word(observation, agent, logging):
     '''
     model = agent.model
 
-    unproposed_classics = WORD_LIST_RANDOM - set(observation["proposed_words"])
-
-    if len(unproposed_classics)==0:
-        unproposed_words = WORDS_BIG_LIST - set(observation["proposed_words"])
-
-        if len(unproposed_words)==0:
-            logging.info("Turned to full random")
-            n = len(agent.voc)
-            i = np.random.randint(0, n-1)
-            word = model.index_to_key[i]
-            word = re.split(r'[^a-zA-Z0-9]', word)
-            return [item.lower() for item in word], None # split the word to remove special characters (I'm -> ['I','m'])
-        
-        else:
-            word = np.random.choice(list(unproposed_words), size=1)
-            return [word], None
-
-    for word in unproposed_classics:
-        return [word], None
+    n = len(agent.voc)
+    i = np.random.randint(0, n-1)
+    word = model.index_to_key[i]
+    word = re.split(r'[^a-zA-Z0-9]', word)
+    return [item.lower() for item in word], None # split the word to remove special characters (I'm -> ['I','m'])
 
 def closest_word_of_random_word(observation, agent, logging):
     '''
@@ -95,10 +103,10 @@ def closest_word_of_random_word(observation, agent, logging):
         )[0]
 
     if observation["fitted_words"][target_id] is None:
-        logging.info("Turned to usual word")
-        return list_classic_word(observation, agent, logging)
+        logging.info("Turned to full random")
+        return _random_word(observation, agent, logging)
     
-    words, _ = get_nearest_words(agent, observation, target_id)
+    words, _ = get_nearest_words(agent, observation, target_id, n=200)
     
     for i, word in enumerate(words):
         word = re.split(r'[^a-zA-Z0-9]', word)
@@ -123,10 +131,14 @@ def closest_word_of_last_targetted_word(observation, agent, logging):
 
     # Let's first look at if the last target id corresponds to a fitting word. If not, we return a random word.
     if last_target_id is None or observation["fitted_words"][last_target_id] is None:
-        logging.info("Turned to usual word")
-        return list_classic_word(observation, agent, logging)
+        logging.info("Turned to full random")
+        return _random_word(observation, agent, logging)
 
-    words, _ = get_nearest_words(agent, observation, last_target_id)   
+    try:
+        words, _ = get_nearest_words(agent, observation, last_target_id, n=200)   
+    except:
+        logging.info("Target word not in voc, turned to full random")
+        return _random_word(observation, agent, logging)
 
     for i,word in enumerate(words):
         word = re.split(r'[^a-zA-Z0-9]', word)
@@ -161,8 +173,8 @@ def closest_of_closest_words(observation, agent, logging):
             closest_words_index[word] = i
 
     if turn_to_random:
-        logging.info("Turned to usual word")
-        return list_classic_word(observation, agent, logging)
+        logging.info("Turned to full random")
+        return _random_word(observation, agent, logging)
 
     while True:
         closest_word = max(closest_words_score, key=lambda x: closest_words_score[x])
@@ -175,8 +187,8 @@ def closest_of_closest_words(observation, agent, logging):
         closest_words_score.pop(closest_word)
         closest_words_index.pop(closest_word)
         if len(closest_words_score) == 0:
-            logging.info("Turned to usual word")
-            return list_classic_word(observation, agent, logging)
+            logging.info("Turned to full random")
+            return _random_word(observation, agent, logging)
 
     return [item.lower() for item in word if item != ""], target_id # split the word to remove special characters (I'm -> ['I','m'])
 
@@ -189,9 +201,9 @@ def best_fitted_word(observation, agent, logging):
     target_id = observation["index_of_words_to_find"][intermed]
     word = observation["fitted_words"][target_id]
     if word is None:
-        logging.info("Turned to usual word")
-        return list_classic_word(observation, agent, logging)
-    words, _ = get_nearest_words(agent, observation, target_id)
+        logging.info("Turned to full random")
+        return _random_word(observation, agent, logging)
+    words, _ = get_nearest_words(agent, observation, target_id, n=200)
     for i, word in enumerate(words):
         word = re.split(r'[^a-zA-Z0-9]', word)
         if word[0].lower() not in observation["proposed_words"] and not word[0]=='':
@@ -210,14 +222,15 @@ def look_for_title(observation, agent, logging):
     It returns the nearest word to the target word, and the target id.
     '''
     if all(word is None for word in observation["words_title"]):
-        logging.info("Turned to usual word")
-        return list_classic_word(observation, agent, logging)
+        logging.info("Empty title, turned to full random")
+        return _random_word(observation, agent, logging)
     word_title = random.choice(observation["words_title"])
     word = word_title.lower()
     if word is None:
-        logging.info("Turned to usual word")
-        return list_classic_word(observation, agent, logging)
-    words, _ = get_nearest_words(agent, observation, target_id=None, direct_word = word)
+        logging.info("Full title is None, turned to full random")
+        return _random_word(observation, agent, logging)
+    logging.info(f"Title word: {word}")
+    words, _ = get_nearest_words(agent, observation, target_id=None, direct_word = word, n=200)
     for i, word in enumerate(words):
         word = re.split(r'[^a-zA-Z0-9]', word)
         if word[0].lower() not in observation["proposed_words"] and not word[0]=='':
