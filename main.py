@@ -68,7 +68,7 @@ def run_episode(current_agent, env, model, index, state_visits, max_words_per_ep
     return nb_proposed_words
 
 if __name__ == "__main__":
-    num_episodes = 70
+    num_episodes = 1
     max_words_per_episode = 500
     
     now = datetime.datetime.now()
@@ -77,9 +77,9 @@ if __name__ == "__main__":
 
     env = gym.make(
         "gym_examples/Pedantle-v0", 
-        render_mode=None, # else "human" 
-        test_model=False, 
-        wiki_file="data/wikipedia_dataset.csv",
+        render_mode="human", # else "human" 
+        test_model=True, 
+        #wiki_file="data/wikipedia_dataset.csv",
         logging = logging,
         )
     

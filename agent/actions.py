@@ -7,7 +7,6 @@ from gym_examples.wrappers.utils import filter_words
 import re
 from pdb import set_trace 
 import agent
-# from utils import get_nearest_words
 from agent.utils import get_nearest_words
 from sklearn.metrics.pairwise import cosine_similarity
 import random
@@ -106,7 +105,11 @@ def closest_word_of_random_word(observation, agent, logging):
         logging.info("Turned to full random")
         return _random_word(observation, agent, logging)
     
-    words, _ = get_nearest_words(agent, observation, target_id, n=200)
+    try:
+        words, _ = get_nearest_words(agent, observation, target_id, n=200)
+    except:
+        logging.info("Target word not in voc, turned to full random")
+        return _random_word(observation, agent, logging)
     
     for i, word in enumerate(words):
         word = re.split(r'[^a-zA-Z0-9]', word)
@@ -203,7 +206,13 @@ def best_fitted_word(observation, agent, logging):
     if word is None:
         logging.info("Turned to full random")
         return _random_word(observation, agent, logging)
-    words, _ = get_nearest_words(agent, observation, target_id, n=200)
+    
+    try:
+        words, _ = get_nearest_words(agent, observation, target_id, n=200)
+    except:
+        logging.info("Target word not in voc, turned to full random")
+        return _random_word(observation, agent, logging)
+    
     for i, word in enumerate(words):
         word = re.split(r'[^a-zA-Z0-9]', word)
         if word[0].lower() not in observation["proposed_words"] and not word[0]=='':
@@ -230,7 +239,13 @@ def look_for_title(observation, agent, logging):
         logging.info("Full title is None, turned to full random")
         return _random_word(observation, agent, logging)
     logging.info(f"Title word: {word}")
-    words, _ = get_nearest_words(agent, observation, target_id=None, direct_word = word, n=200)
+    
+    try:
+        words, _ = get_nearest_words(agent, observation, target_id=None, direct_word=word, n=200)
+    except:
+        logging.info("Target word not in voc, turned to full random")
+        return _random_word(observation, agent, logging)
+
     for i, word in enumerate(words):
         word = re.split(r'[^a-zA-Z0-9]', word)
         if word[0].lower() not in observation["proposed_words"] and not word[0]=='':
