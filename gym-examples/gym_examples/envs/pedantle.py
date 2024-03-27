@@ -20,7 +20,7 @@ class PedantleEnv(gym.Env):
             render_mode=None, 
             logging=None,
             sim_threshold_true=0.9,
-            sim_threshold_fit=0.2, 
+            sim_threshold_fit=0.1, 
             max_article_size=1000, 
             max_title_size=100, 
             max_word_length=1000,
@@ -152,13 +152,13 @@ class PedantleEnv(gym.Env):
             self._proposed_words.append(proposed_word)
 
             # Check similarity with title
-            for i, word in enumerate(self._title):
+            for id, word in enumerate(self._title):
                 similarity = compute_similarity(word, proposed_word, self.embedding_model)
 
                 # if the similarity is better than the threshold, we fit the true word.
                 if similarity>self.sim_threshold_true:
                     reward += title_true_reward
-                    self._fitted_title[i] = word
+                    self._fitted_title[id] = word
 
             # Check similarity with article
             for id in self._index_of_words_to_find:
@@ -169,19 +169,16 @@ class PedantleEnv(gym.Env):
                 # and update the proximity to 1.
                 if similarity>self.sim_threshold_true: 
                     reward += word_true_reward
-                    self._fitted_words[i] = word
-                    self._words_prox[i] = 1
+                    self._fitted_words[id] = word
+                    self._words_prox[id] = 1
 
                 # if the similarity is better than the previous one and higher than
                 # the fixed threshold of 0.2, we fit the proposed word
                 # and update the proximity to the new similarity score.
-                elif similarity>self._words_prox[i] and similarity>self.sim_threshold_fit: 
+                elif similarity>self.sim_threshold_fit and similarity>self._words_prox[id]: 
                     reward += word_fit_reward*similarity*100/len(self._fitted_words)
-                    self._fitted_words[i] = proposed_word
-                    self._words_prox[i] = similarity
-
-        elif proposed_word in self._proposed_words:
-            already_proposed = True                  
+                    self._fitted_words[id] = proposed_word
+                    self._words_prox[id] = similarity               
 
         # An episode is done iff the agent has reached the target
         terminated = None not in self._fitted_title
