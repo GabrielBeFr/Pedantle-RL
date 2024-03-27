@@ -16,10 +16,10 @@ class PedantleEnv(gym.Env):
     def __init__(
             self, 
             test_model=False,
-            wiki_file="/home/gabriel/cours/RL/projet/wikipedia_simple.csv",
+            wiki_file="data/wikipedia_april.csv",
             render_mode=None, 
             logging=None,
-            sim_threshold_true=0.55,
+            sim_threshold_true=0.9,
             sim_threshold_fit=0.2, 
             max_article_size=1000, 
             max_title_size=100, 
@@ -78,10 +78,10 @@ class PedantleEnv(gym.Env):
         self.logging.info(f'render_mode: {render_mode} \n')
 
     def _get_obs(self):
-        index_of_words_to_find = [i for i, score in enumerate(self._words_prox) if score != 1]
+        self._index_of_words_to_find = [i for i, score in enumerate(self._words_prox) if score != 1]
         alphanumeric_words_title = [word.lower() for word in self._fitted_title if word is not None and re.match(r'^[a-zA-Z0-9]+$', word)]
         obs = {
-            "index_of_words_to_find": index_of_words_to_find,
+            "index_of_words_to_find": self._index_of_words_to_find,
             "words_prox": self._words_prox,
             "words_size": self._words_size,
             "proposed_words": self._proposed_words,
@@ -136,14 +136,16 @@ class PedantleEnv(gym.Env):
     def step(
             self, 
             proposed_word, 
-            whole_title_reward = 100000, 
-            title_true_reward = 10, 
-            word_true_reward = 1,
+            whole_title_reward = 50, 
+            title_true_reward = 50, 
+            word_true_reward = 5,
             word_fit_reward = 1,
             nothing_reward = -1,
             ):
 
-        already_proposed = False
+        if proposed_word in self._proposed_words:
+            return self._get_obs(), nothing_reward, False, False, {}
+        
         reward = 0
 
         if proposed_word not in self._proposed_words:
@@ -159,7 +161,8 @@ class PedantleEnv(gym.Env):
                     self._fitted_title[i] = word
 
             # Check similarity with article
-            for i, word in enumerate(self._words):
+            for id in self._index_of_words_to_find:
+                word = self._words[id]
                 similarity = compute_similarity(word, proposed_word, self.embedding_model)
 
                 # if the similarity is better than the threshold, we fit the true word
@@ -173,7 +176,7 @@ class PedantleEnv(gym.Env):
                 # the fixed threshold of 0.2, we fit the proposed word
                 # and update the proximity to the new similarity score.
                 elif similarity>self._words_prox[i] and similarity>self.sim_threshold_fit: 
-                    reward += word_fit_reward*similarity
+                    reward += word_fit_reward*similarity*100/len(self._fitted_words)
                     self._fitted_words[i] = proposed_word
                     self._words_prox[i] = similarity
 

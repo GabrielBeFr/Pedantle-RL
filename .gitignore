@@ -1,5 +1,6 @@
 # experiment notebooks
 project.ipynb
+faiss_knn.ipynb
 
 #logs
 logs
@@ -10,8 +11,12 @@ GoogleNews-vectors-negative300.bin
 word2vec_full.faiss
 word2vec_test.faiss
 wikipedia_dataset.csv
+cpu_word2vec_test.faiss
+v3_cpu_word2vec_full.faiss
 
 # additionnal files and directories
 __pycache__
 venv
 slurm_script.sh
+slurms
+experiments.py
