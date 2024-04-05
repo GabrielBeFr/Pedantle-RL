@@ -1,6 +1,7 @@
 # experiment notebooks
 project.ipynb
 faiss_knn.ipynb
+deep_experiment.ipynb
 
 #logs
 logs
@@ -13,6 +14,9 @@ word2vec_test.faiss
 wikipedia_dataset.csv
 cpu_word2vec_test.faiss
 v3_cpu_word2vec_full.faiss
+
+# results
+results
 
 # additionnal files and directories
 __pycache__
