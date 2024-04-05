@@ -40,14 +40,9 @@
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#installation">Installation and Usage</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
@@ -86,19 +81,7 @@ The goal of this project is to create an agent that can play Pedantle, using Rei
 
 To get a local copy of the project up and running, follow these few steps.
 
-### Prerequisites
-
-A few libraries are required to run the code. You can install them using pip:
-* gensim
-  ```sh
-  pip install gensim
-  ```
-* gym
-  ```sh
-  pip install gym
-  ```
-
-### Installation
+### Installation and Usage
 
 1. Clone the repo
    ```sh
@@ -106,7 +89,7 @@ A few libraries are required to run the code. You can install them using pip:
    ```
 2. Install the above mentioned required packages
    ```sh
-   ip install gensim gym
+   pip install -r requirements.txt
    ```
 3. Install the Pedantle environment
    ```sh
@@ -117,22 +100,41 @@ A few libraries are required to run the code. You can install them using pip:
    ```sh
    python dataset_downloader.py
    ```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- USAGE EXAMPLES -->
-## Usage
-
-To run the code agent and visualize the results, you can run the main.py file:
+6. **(Read carefully)** You have to create a faiss index to search words from the word2vec vocabulary quicker. By running the following command, you will initiate a (very) long and greedy process of faiss index construction. First, a small index named "word2vec_test.faiss" will be created. This should be fast. But the second index building should take a long time to finish. It thus advised that you end the process manually after having created the test index. However, for the agent to perform with the whole word2vec vocabulary, the large index is mandatory. 
+   ```sh
+   python faiss_index_maker.py
+   ``` 
+7. You can now run the main.py file to see the agent playing Pedantle:
    ```sh
    python main.py
    ```
-
-A pygame window should open, displaying the game and the agent playing it.
+   In the main.py file, you can change the parameters of the agent, such as the number of episodes, the number of steps per episode, the learning rate, etc. but also activate or deactivate the human display mode, the test mode, and change the wikipedia dataset path.
+   Default is: 
+   ```sh
+    env = gym.make(
+    "gym_examples/Pedantle-v0", 
+    render_mode="human", # else None 
+    test_model=True, 
+    logging = logging,
+    )
+   ```
+   If you want to run the agent with the whole vocabulary and the true wikipedia dataset, you can change to:
+   ```sh
+    env = gym.make(
+    "gym_examples/Pedantle-v0", 
+    render_mode=None, # else "human" 
+    test_model=True, 
+    wiki_file="data/wikipedia_dataset.csv",
+    logging = logging,
+    )
+8. Eventually, you can visualize the results of the agent by running the following command:
+   ```sh
+    python results.py
+   ``` 
+   Don't forget to modify the results.py file with the correct path to the results file *(You should find it in the results/ directory)*.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 
 
 <!-- CONTACT -->

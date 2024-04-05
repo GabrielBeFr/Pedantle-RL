@@ -23,7 +23,7 @@ print("Training index")
 index.train(vectors)
 print("Adding vectors to index")
 index.add_with_ids(vectors,np.arange(vectors.shape[0]))
-faiss.write_index(index, "data/v3_cpu_word2vec_test.faiss")
+faiss.write_index(index, "data/word2vec_test.faiss")
 
 # Making full index
 print("Making full index")
