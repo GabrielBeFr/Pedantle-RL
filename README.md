@@ -71,6 +71,7 @@ The goal of this project is to create an agent that can play Pedantle, using Rei
 
 * [![gym][gym.js]][gym-url]
 * [![gensim][gensim.js]][gensim-url]
+* [![faiss][faiss.js]][faiss-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
