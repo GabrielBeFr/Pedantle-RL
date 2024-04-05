@@ -96,7 +96,7 @@ To get a local copy of the project up and running, follow these few steps.
    ```sh
    pip install -e gym-examples
    ```
-4. Download the pre-trained word2vec model [here](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?resourcekey=0-wjGZdNAUop6WykTtMip30g). You can find this file from [this Google Code Archive](https://code.google.com/archive/p/word2vec/), in the *Pre-trained word and phrase vectors* part. 
+4. Download the pre-trained word2vec model [here](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?resourcekey=0-wjGZdNAUop6WykTtMip30g) and add it to the *data/* directory. You can find this file from [this Google Code Archive](https://code.google.com/archive/p/word2vec/), in the *Pre-trained word and phrase vectors* part. 
 5. *(Optional - heavy in storage)* You can also download the true wikipedia dataset from the [Hugging Face](https://huggingface.co/) datasets library, [here](https://huggingface.co/datasets/wikipedia?viewer_api=true), by running the dataset_downloader.py file: 
    ```sh
    python dataset_downloader.py
