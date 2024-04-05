@@ -171,4 +171,8 @@ Project Link: [https://github.com/GabrielBeFr/Pedantle-RL](https://github.com/Ga
 [gym.js]: https://img.shields.io/badge/gym-000000?style=for-the-badge&logo=openaigym&logoColor=white
 [gym-url]: https://www.gymlibrary.dev/index.html
 [gensim.js]: https://img.shields.io/badge/gensim-000000?style=for-the-badge
-[gensim-url]: https://radimrehurek.com/gensim/ 
+[gensim-url]: https://radimrehurek.com/gensim/
+[gym.js]: https://img.shields.io/badge/gym-000000?style=for-the-badge&logo=openaigym&logoColor=white
+[gym-url]: https://www.gymlibrary.dev/index.html
+[faiss.js]: https://img.shields.io/badge/faiss-000000?style=for-the-badge
+[faiss-url]: https://github.com/facebookresearch/faiss

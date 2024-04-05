@@ -68,7 +68,7 @@ def run_episode(current_agent, env, model, index, state_visits, max_words_per_ep
     return nb_proposed_words
 
 if __name__ == "__main__":
-    num_episodes = 800
+    num_episodes = 2 # 800
     max_words_per_episode = 500
     
     now = datetime.datetime.now()
