@@ -12,7 +12,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/GabrielBeFr/Pedantle-RL">
-    <img src="report/pedantle-RL.svg" alt="Logo" width="80" height="80">
+    <img src="pedantle-RL.svg" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">Agentle - Playing Pedantle with RL</h3>
