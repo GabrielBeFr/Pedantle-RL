@@ -68,7 +68,7 @@ def run_episode(current_agent, env, model, index, state_visits, max_words_per_ep
     return nb_proposed_words
 
 if __name__ == "__main__":
-    num_episodes = 1
+    num_episodes = 800
     max_words_per_episode = 500
     
     now = datetime.datetime.now()
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     current_agent = Q_learning_agent.QLearningAgent()
     current_agent.agent_init(agent_info)
 
-    state_visits = np.zeros(100)
+    state_visits = np.zeros(N_STATES, dtype=int)
     nb_words = []
 
     for i in range(num_episodes):
